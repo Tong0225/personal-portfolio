@@ -63,9 +63,12 @@ export function CategoryFilter({
   const renderCategoryItem = (category: Category, level: number = 0) => {
     const hasChildren = category.children && category.children.length > 0;
     const isExpanded = expandedCategories.has(category.id);
-    const count = level === 0 
-      ? parentStats[category.id] || 0 
-      : stats[category.id] || 0;
+    // "全部"分类特殊处理：显示所有作品总数
+    const count = category.id === 'all' 
+      ? Object.values(parentStats).reduce((a, b) => a + b, 0)
+      : level === 0 
+        ? parentStats[category.id] || 0 
+        : stats[category.id] || 0;
     const isSelected = selectedCategory === category.id;
     const isParentSelected = level === 0 && selectedCategory.startsWith(category.id + ':');
 
