@@ -10,7 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { ExternalLink, Star, AlertCircle, Video, Loader2 } from 'lucide-react';
+import { ExternalLink, Star, AlertCircle, Video, Loader2, Music } from 'lucide-react';
 
 interface WorkModalProps {
   work: Work | null;
