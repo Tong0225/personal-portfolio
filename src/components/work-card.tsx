@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Work, getCategoryPath } from '@/lib/works';
 import { Badge } from '@/components/ui/badge';
-import { Star, Play, FileText, Image as ImageIcon, Edit, Trash2 } from 'lucide-react';
+import { Star, Play, FileText, Image as ImageIcon, Edit, Trash2, Music } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -37,6 +37,8 @@ export function WorkCard({
         return <Play className="w-4 h-4" />;
       case 'pdf':
         return <FileText className="w-4 h-4" />;
+      case 'audio':
+        return <Music className="w-4 h-4" />;
       case 'image':
       default:
         return <ImageIcon className="w-4 h-4" />;
@@ -49,6 +51,8 @@ export function WorkCard({
         return <Badge variant="secondary">视频</Badge>;
       case 'pdf':
         return <Badge variant="secondary">PDF</Badge>;
+      case 'audio':
+        return <Badge variant="secondary">音频</Badge>;
       case 'image':
       default:
         return <Badge variant="secondary">图片</Badge>;
@@ -140,11 +144,15 @@ export function WorkCard({
           />
         )}
         
-        {/* 视频播放指示 */}
-        {work.type === 'video' && (
+        {/* 视频/音频播放指示 */}
+        {(work.type === 'video' || work.type === 'audio') && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/30">
             <div className="w-14 h-14 rounded-full bg-white/90 flex items-center justify-center shadow-lg">
-              <Play className="w-6 h-6 text-gray-800 ml-1" />
+              {work.type === 'audio' ? (
+                <Music className="w-6 h-6 text-gray-800" />
+              ) : (
+                <Play className="w-6 h-6 text-gray-800 ml-1" />
+              )}
             </div>
           </div>
         )}

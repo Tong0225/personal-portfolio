@@ -1,13 +1,15 @@
 // 作品类型定义
+export type WorkType = 'video' | 'image' | 'pdf' | 'audio';
+
 export interface Work {
   id: string;
   title: string;
-  type: 'video' | 'image' | 'pdf';
+  type: WorkType;
   category: string; // 格式：parentId:childId，如 "design:ui"
   subCategory?: string; // 二级分类名称
   tags: string[];
   description: string;
-  source: string; // B站BV号 或 GitHub路径
+  source: string; // B站BV号 或 GitHub路径 或音频链接
   thumbnail: string;
   featured: boolean;
   createdAt: number;

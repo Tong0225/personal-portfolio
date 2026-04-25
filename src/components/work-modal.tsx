@@ -21,6 +21,15 @@ interface WorkModalProps {
 export function WorkModal({ work, open, onOpenChange }: WorkModalProps) {
   const [videoError, setVideoError] = useState(false);
   const [videoLoading, setVideoLoading] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // 设备检测
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
+    };
+    checkMobile();
+  }, []);
 
   // ESC键关闭
   useEffect(() => {
@@ -33,7 +42,7 @@ export function WorkModal({ work, open, onOpenChange }: WorkModalProps) {
 
   // 重置状态当work变化时
   useEffect(() => {
-    if (work?.type === 'video') {
+    if (work?.type === 'video' || work?.type === 'audio') {
       setVideoError(false);
       setVideoLoading(true);
     }
@@ -63,13 +72,14 @@ export function WorkModal({ work, open, onOpenChange }: WorkModalProps) {
   const renderPreview = () => {
     switch (work.type) {
       case 'video':
+      case 'audio':
         const bilibiliUrl = getBilibiliUrl(work.source);
         
         if (videoError) {
           return (
             <div className="relative aspect-video w-full bg-muted rounded-lg flex flex-col items-center justify-center gap-4">
               <AlertCircle className="w-12 h-12 text-destructive" />
-              <p className="text-muted-foreground">视频加载失败</p>
+              <p className="text-muted-foreground">{work.type === 'audio' ? '音频' : '视频'}加载失败</p>
               <p className="text-sm text-muted-foreground">
                 BV号: {work.source}
               </p>
@@ -95,12 +105,18 @@ export function WorkModal({ work, open, onOpenChange }: WorkModalProps) {
         }
 
         return (
-          <div className="relative aspect-video w-full bg-black rounded-lg overflow-hidden">
+          <div className="relative w-full bg-black rounded-lg overflow-hidden" style={{ height: work.type === 'audio' ? '80px' : undefined, aspectRatio: work.type === 'audio' ? undefined : '16/9' }}>
             {videoLoading && (
               <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-10">
                 <Loader2 className="w-8 h-8 animate-spin text-white" />
               </div>
             )}
+            {work.type === 'audio' ? (
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-r from-purple-900/80 to-pink-900/80">
+                <Music className="w-8 h-8 text-white mb-2" />
+                <p className="text-white text-sm">音频播放中...</p>
+              </div>
+            ) : null}
             <iframe
               src={bilibiliUrl}
               className="absolute inset-0 w-full h-full"
@@ -117,6 +133,21 @@ export function WorkModal({ work, open, onOpenChange }: WorkModalProps) {
         );
 
       case 'pdf':
+        if (isMobile) {
+          return (
+            <div className="flex flex-col items-center justify-center h-[60vh] bg-muted rounded-lg">
+              <p className="text-muted-foreground mb-4">移动端暂不支持PDF预览</p>
+              <Button
+                variant="default"
+                size="sm"
+                onClick={() => window.open(work.source, '_blank')}
+              >
+                <ExternalLink className="mr-2 h-4 w-4" />
+                在新窗口打开
+              </Button>
+            </div>
+          );
+        }
         return (
           <div className="relative w-full h-[80vh] bg-muted rounded-lg overflow-hidden">
             <iframe
@@ -173,16 +204,16 @@ export function WorkModal({ work, open, onOpenChange }: WorkModalProps) {
               <ExternalLink className="mr-2 h-4 w-4" />
               在新窗口打开
             </Button>
-            {work.type === 'video' && (
+            {work.type === 'video' || work.type === 'audio' ? (
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => window.open(`https://www.bilibili.com/video/${work.source}`, '_blank')}
               >
                 <Video className="mr-2 h-4 w-4" />
-                在B站查看
+                在B站{work.type === 'audio' ? '收听' : '查看'}
               </Button>
-            )}
+            ) : null}
           </div>
 
           {/* 标签 */}

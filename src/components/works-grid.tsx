@@ -67,7 +67,8 @@ export function WorksGrid({
       const shortestColumn = columnHeights.indexOf(Math.min(...columnHeights));
       columnWorks[shortestColumn].push(work);
       // 估算高度（实际高度会在卡片中根据图片比例计算）
-      columnHeights[shortestColumn] += work.type === 'video' ? 300 : work.type === 'pdf' ? 250 : 280;
+      const workHeight = work.type === 'video' ? 300 : work.type === 'audio' ? 250 : work.type === 'pdf' ? 250 : 280;
+      columnHeights[shortestColumn] += workHeight;
     });
 
     return columnWorks;

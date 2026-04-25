@@ -108,13 +108,13 @@ export function WorkForm({ work, open, onOpenChange, onSubmit }: WorkFormProps) 
     
     if (!source.trim()) {
       newErrors.source = '请输入资源链接';
-    } else if (type === 'video') {
+    } else if (type === 'video' || type === 'audio') {
       // 验证B站BV号格式 - 现在支持直接上传视频或输入BV号
       const bvRegex = /^(BV[a-zA-Z0-9]+|av\d+)$/;
       // 如果不是BV号格式，检查是否是URL
       const isUrl = source.startsWith('http://') || source.startsWith('https://');
       if (!bvRegex.test(source.trim()) && !isUrl) {
-        newErrors.source = '请输入正确的B站BV号（如 BV1xx411c7mD）或视频链接';
+        newErrors.source = `请输入正确的B站BV号（如 BV1xx411c7mD）用于${type === 'audio' ? '音频' : '视频'}播放`;
       }
     }
 
@@ -183,6 +183,7 @@ export function WorkForm({ work, open, onOpenChange, onSubmit }: WorkFormProps) 
                 <SelectContent>
                   <SelectItem value="image">图片</SelectItem>
                   <SelectItem value="video">视频</SelectItem>
+                  <SelectItem value="audio">音频</SelectItem>
                   <SelectItem value="pdf">PDF</SelectItem>
                 </SelectContent>
               </Select>
@@ -211,7 +212,7 @@ export function WorkForm({ work, open, onOpenChange, onSubmit }: WorkFormProps) 
           {/* 资源链接 */}
           <div className="space-y-2">
             <Label htmlFor="source">
-              {type === 'video' ? '视频链接' : type === 'pdf' ? 'PDF链接' : '图片链接'} *
+              {type === 'video' ? '视频链接' : type === 'audio' ? '音频链接' : type === 'pdf' ? 'PDF链接' : '图片链接'} *
             </Label>
             
             <Input
@@ -221,6 +222,8 @@ export function WorkForm({ work, open, onOpenChange, onSubmit }: WorkFormProps) 
               placeholder={
                 type === 'video'
                   ? 'B站BV号（如 BV1xx411c7mD）或视频URL'
+                  : type === 'audio'
+                  ? 'B站BV号（如 BV1xx411c7mD）用于音频播放'
                   : type === 'pdf'
                   ? 'PDF 文件链接'
                   : '图片直链'
@@ -233,6 +236,11 @@ export function WorkForm({ work, open, onOpenChange, onSubmit }: WorkFormProps) 
             {type === 'video' && (
               <p className="text-xs text-muted-foreground">
                 输入B站BV号即可自动嵌入播放器
+              </p>
+            )}
+            {type === 'audio' && (
+              <p className="text-xs text-muted-foreground">
+                输入B站BV号即可自动嵌入音频播放器
               </p>
             )}
             {type === 'image' && (
