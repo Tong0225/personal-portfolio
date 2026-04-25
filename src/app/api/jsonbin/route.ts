@@ -32,13 +32,12 @@ async function fetchFromCloud(binId: string, apiKey?: string) {
 
 // 保存数据到云端
 async function saveToCloud(binId: string, works: any[], apiKey?: string) {
-  if (!apiKey) {
-    throw new Error('需要 API Key 才能保存数据');
-  }
-
+  // 如果没有传入 apiKey，使用默认的
+  const effectiveApiKey = apiKey || DEFAULT_API_KEY;
+  
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
-    'X-Master-Key': apiKey,
+    'X-Master-Key': effectiveApiKey,
   };
 
   // 尝试更新现有 bin
