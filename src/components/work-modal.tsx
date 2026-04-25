@@ -1,0 +1,214 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { Work, getCategoryPath } from '@/lib/works';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { ExternalLink, Star, AlertCircle, Video, Loader2 } from 'lucide-react';
+
+interface WorkModalProps {
+  work: Work | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+export function WorkModal({ work, open, onOpenChange }: WorkModalProps) {
+  const [videoError, setVideoError] = useState(false);
+  const [videoLoading, setVideoLoading] = useState(true);
+
+  // ESC键关闭
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onOpenChange(false);
+    };
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, [onOpenChange]);
+
+  // 重置状态当work变化时
+  useEffect(() => {
+    if (work?.type === 'video') {
+      setVideoError(false);
+      setVideoLoading(true);
+    }
+  }, [work]);
+
+  if (!work) return null;
+
+  // 构建B站视频URL
+  const getBilibiliUrl = (bvId: string): string => {
+    // 处理不同格式的BV号
+    let bvid = bvId.trim();
+    
+    // 如果包含BV前缀，直接使用
+    if (bvid.startsWith('BV')) {
+      return `https://player.bilibili.com/player.html?bvid=${bvid}&high_quality=1&autoplay=0`;
+    }
+    
+    // 如果是纯数字（av号），转换为BV或直接使用
+    if (/^\d+$/.test(bvid)) {
+      return `https://player.bilibili.com/player.html?aid=${bvid}&high_quality=1&autoplay=0`;
+    }
+    
+    // 假设已经是纯BV号（没有BV前缀的情况）
+    return `https://player.bilibili.com/player.html?bvid=${bvid}&high_quality=1&autoplay=0`;
+  };
+
+  const renderPreview = () => {
+    switch (work.type) {
+      case 'video':
+        const bilibiliUrl = getBilibiliUrl(work.source);
+        
+        if (videoError) {
+          return (
+            <div className="relative aspect-video w-full bg-muted rounded-lg flex flex-col items-center justify-center gap-4">
+              <AlertCircle className="w-12 h-12 text-destructive" />
+              <p className="text-muted-foreground">视频加载失败</p>
+              <p className="text-sm text-muted-foreground">
+                BV号: {work.source}
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setVideoError(false);
+                  setVideoLoading(true);
+                }}
+              >
+                重试
+              </Button>
+              <Button
+                variant="link"
+                size="sm"
+                onClick={() => window.open(`https://www.bilibili.com/video/${work.source}`, '_blank')}
+              >
+                在B站打开
+              </Button>
+            </div>
+          );
+        }
+
+        return (
+          <div className="relative aspect-video w-full bg-black rounded-lg overflow-hidden">
+            {videoLoading && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-10">
+                <Loader2 className="w-8 h-8 animate-spin text-white" />
+              </div>
+            )}
+            <iframe
+              src={bilibiliUrl}
+              className="absolute inset-0 w-full h-full"
+              frameBorder="0"
+              allowFullScreen
+              scrolling="no"
+              onLoad={() => setVideoLoading(false)}
+              onError={() => {
+                setVideoLoading(false);
+                setVideoError(true);
+              }}
+            />
+          </div>
+        );
+
+      case 'pdf':
+        return (
+          <div className="relative w-full h-[70vh] bg-muted rounded-lg overflow-hidden">
+            <iframe
+              src={`https://mozilla.github.io/pdf.js/web/viewer.html?file=${encodeURIComponent(work.source)}`}
+              className="absolute inset-0 w-full h-full"
+              title="PDF Preview"
+            />
+          </div>
+        );
+
+      case 'image':
+      default:
+        return (
+          <div className="relative w-full flex items-center justify-center bg-muted rounded-lg overflow-hidden">
+            <img
+              src={work.source}
+              alt={work.title}
+              className="max-w-full max-h-[70vh] object-contain"
+            />
+          </div>
+        );
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader className="space-y-4">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1">
+              <DialogTitle className="text-xl flex items-center gap-2">
+                {work.title}
+                {work.featured && (
+                  <Badge variant="default" className="bg-yellow-500 hover:bg-yellow-600">
+                    <Star className="w-3 h-3 mr-1" />
+                    精选
+                  </Badge>
+                )}
+              </DialogTitle>
+              {/* 分类显示 */}
+              <p className="text-sm text-muted-foreground mt-1">
+                {getCategoryPath(work.category)}
+              </p>
+            </div>
+          </div>
+
+          {/* 标签 */}
+          <div className="flex flex-wrap gap-2">
+            <Badge variant="secondary">{work.subCategory || work.category}</Badge>
+            {work.tags.map((tag) => (
+              <Badge key={tag} variant="outline">
+                {tag}
+              </Badge>
+            ))}
+          </div>
+        </DialogHeader>
+
+        {/* 预览内容 */}
+        <div className="mt-4">
+          {renderPreview()}
+        </div>
+
+        {/* 描述 */}
+        {work.description && (
+          <div className="mt-4 p-4 bg-muted/50 rounded-lg">
+            <h4 className="font-medium mb-2">作品描述</h4>
+            <p className="text-muted-foreground">{work.description}</p>
+          </div>
+        )}
+
+        {/* 原链接 */}
+        <div className="mt-4 flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => window.open(work.source, '_blank')}
+          >
+            <ExternalLink className="mr-2 h-4 w-4" />
+            在新窗口打开
+          </Button>
+          {work.type === 'video' && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => window.open(`https://www.bilibili.com/video/${work.source}`, '_blank')}
+            >
+              <Video className="mr-2 h-4 w-4" />
+              在B站查看
+            </Button>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
