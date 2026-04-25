@@ -143,7 +143,7 @@ export function WorkModal({ work, open, onOpenChange }: WorkModalProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[95vw] max-h-[95vh] overflow-y-auto">
+      <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-[95vw] max-h-[95vh] overflow-y-auto">
         <DialogHeader className="space-y-4">
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1">
