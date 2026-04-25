@@ -292,13 +292,20 @@ export const worksStorage = {
     const works = worksStorage.getAll();
     if (category === 'all') return works;
     
-    // 如果是二级分类（如 design:ui）
-    if (category.includes(':')) {
+    const colonCount = (category.match(/:/g) || []).length;
+    
+    // 二级分类（2个冒号）：精确匹配
+    if (colonCount >= 2) {
       return works.filter(w => w.category === category);
     }
     
-    // 如果是一级分类，匹配所有子分类
-    return works.filter(w => w.category.startsWith(category + ':') || w.category === category);
+    // 一级分类（1个冒号）：匹配该分类及其所有子分类
+    if (colonCount === 1) {
+      return works.filter(w => w.category === category || w.category.startsWith(category + ':'));
+    }
+    
+    // 特殊分类（0个冒号，如 'all'）
+    return works.filter(w => w.category === category);
   },
 
   // 搜索作品
@@ -381,12 +388,20 @@ export function getStats(worksData?: Work[]) {
   const parentCategoryCount: Record<string, number> = {};
   
   works.forEach(work => {
+    // 统计二级分类
     categoryCount[work.category] = (categoryCount[work.category] || 0) + 1;
     
     // 统计一级分类
-    const parentId = work.category.includes(':') 
-      ? work.category.split(':')[0] 
-      : work.category;
+    // 一级分类ID格式: custom:xxx (1个冒号)
+    // 二级分类ID格式: custom:xxx:yyy (2个冒号)
+    const colonCount = (work.category.match(/:/g) || []).length;
+    let parentId = work.category;
+    if (colonCount >= 2) {
+      // 二级分类：取最后一个冒号之前的部分作为一级分类ID
+      const lastColonIndex = work.category.lastIndexOf(':');
+      parentId = work.category.substring(0, lastColonIndex);
+    }
+    // 一级分类或特殊分类：parentId 就是自身
     parentCategoryCount[parentId] = (parentCategoryCount[parentId] || 0) + 1;
   });
   
