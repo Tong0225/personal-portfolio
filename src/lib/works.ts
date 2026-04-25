@@ -31,16 +31,20 @@ export function getAllLeafCategories(): Category[] {
   const leaves: Category[] = [];
   const custom = customCategoriesStorage.getAll();
   
-  // 找出所有二级分类（叶子节点）
+  // 找出所有二级分类（id 中有两个冒号，如 "custom:xxx:yyy"）
   custom.forEach(cat => {
-    if (cat.id.includes(':')) {
+    const colonCount = (cat.id.match(/:/g) || []).length;
+    if (colonCount >= 2) {
       leaves.push(cat);
     }
   });
   
   // 如果没有二级分类，返回一级分类
   if (leaves.length === 0) {
-    custom.filter(c => !c.id.includes(':')).forEach(cat => {
+    custom.filter(c => {
+      const colonCount = (c.id.match(/:/g) || []).length;
+      return colonCount === 1;
+    }).forEach(cat => {
       leaves.push(cat);
     });
   }
@@ -54,9 +58,11 @@ export function getCategoryPath(categoryId: string): string {
   
   const custom = customCategoriesStorage.getAll();
   
-  // 如果是二级分类
-  if (categoryId.includes(':')) {
-    const parentId = categoryId.split(':')[0];
+  // 如果是二级分类（有两个或更多冒号）
+  const colonCount = (categoryId.match(/:/g) || []).length;
+  if (colonCount >= 2) {
+    const lastColonIndex = categoryId.lastIndexOf(':');
+    const parentId = categoryId.substring(0, lastColonIndex);
     const parent = custom.find(c => c.id === parentId);
     const child = custom.find(c => c.id === categoryId);
     if (parent && child) {
@@ -79,8 +85,10 @@ export function getParentCategory(categoryId: string): Category | null {
   
   const custom = customCategoriesStorage.getAll();
   
-  if (categoryId.includes(':')) {
-    const parentId = categoryId.split(':')[0];
+  const colonCount = (categoryId.match(/:/g) || []).length;
+  if (colonCount >= 2) {
+    const lastColonIndex = categoryId.lastIndexOf(':');
+    const parentId = categoryId.substring(0, lastColonIndex);
     return custom.find(c => c.id === parentId) || null;
   }
   
@@ -141,12 +149,16 @@ export const customCategoriesStorage = {
     // 构建分类树
     const result: Category[] = [{ id: 'all', name: '全部', icon: '📁' }];
     
-    // 找出所有一级分类（不包含冒号的）
-    const parentCategories = custom.filter(c => !c.id.includes(':'));
+    // 找出所有一级分类（id 中只有一个冒号，如 "custom:xxx"）
+    const parentCategories = custom.filter(c => {
+      const colonCount = (c.id.match(/:/g) || []).length;
+      return colonCount === 1;
+    });
     
     // 为每个一级分类添加其子分类
     parentCategories.forEach(parent => {
-      const children = custom.filter(c => c.id.startsWith(parent.id + ':'));
+      // 子分类的 id 应该以父 id + ':' 开头
+      const children = custom.filter(c => c.id.startsWith(parent.id + ':') && c.id !== parent.id);
       result.push({
         ...parent,
         children: children.length > 0 ? children : undefined
@@ -155,19 +167,26 @@ export const customCategoriesStorage = {
     
     // 找出独立的二级分类（没有对应的一级分类）
     const orphanChildren = custom.filter(c => {
-      if (!c.id.includes(':')) return false;
-      const parentId = c.id.split(':')[0];
+      const colonCount = (c.id.match(/:/g) || []).length;
+      if (colonCount < 2) return false; // 必须是二级或更深
+      
+      // 获取父 id（去掉最后一个冒号后面的部分）
+      const lastColonIndex = c.id.lastIndexOf(':');
+      const parentId = c.id.substring(0, lastColonIndex);
+      
       return !parentCategories.some(p => p.id === parentId);
     });
     
     // 为孤立的二级分类创建一级分类
     const orphanParents = new Map<string, Category>();
     orphanChildren.forEach(child => {
-      const parentId = child.id.split(':')[0];
+      const lastColonIndex = child.id.lastIndexOf(':');
+      const parentId = child.id.substring(0, lastColonIndex);
+      
       if (!orphanParents.has(parentId)) {
         orphanParents.set(parentId, {
           id: parentId,
-          name: parentId,
+          name: parentId.includes(':') ? parentId.split(':').pop() || parentId : parentId,
           icon: '📁',
           children: []
         });

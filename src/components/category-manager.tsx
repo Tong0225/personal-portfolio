@@ -101,8 +101,11 @@ export function CategoryManager({ open, onOpenChange, onCategoriesChange }: Cate
   // 获取所有一级分类
   const getAllParentCategories = () => {
     const parents: Category[] = [];
-    // 只使用自定义一级分类
-    customCategories.filter(c => !c.id.includes(':')).forEach(cat => {
+    // 一级分类的ID只有一个冒号，如 "custom:xxx"
+    customCategories.filter(c => {
+      const colonCount = (c.id.match(/:/g) || []).length;
+      return colonCount === 1;
+    }).forEach(cat => {
       parents.push({...cat, children: []});
     });
     return parents;
