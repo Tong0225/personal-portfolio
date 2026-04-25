@@ -75,17 +75,33 @@ export function WorkModal({ work, open, onOpenChange }: WorkModalProps) {
 
   const renderPreview = () => {
     switch (work.type) {
-      case 'video':
       case 'audio':
+        // 音频类型：B站不支持iframe嵌入，显示提示界面
+        return (
+          <div className="relative w-full h-48 bg-gradient-to-r from-purple-900/80 to-pink-900/80 rounded-lg flex flex-col items-center justify-center gap-4">
+            <Music className="w-12 h-12 text-white" />
+            <p className="text-white text-lg font-medium">音频作品</p>
+            <p className="text-white/70 text-sm">B站音频暂不支持站内播放</p>
+            <Button
+              variant="default"
+              size="sm"
+              onClick={() => window.open(`https://www.bilibili.com/audio/${work.source}`, '_blank')}
+            >
+              在B站收听
+            </Button>
+          </div>
+        );
+
+      case 'video':
         const bilibiliUrl = getBilibiliUrl(work.source);
         
         if (videoError) {
           return (
             <div className="relative aspect-video w-full bg-muted rounded-lg flex flex-col items-center justify-center gap-4">
               <AlertCircle className="w-12 h-12 text-destructive" />
-              <p className="text-muted-foreground">{work.type === 'audio' ? '音频' : '视频'}加载失败</p>
+              <p className="text-muted-foreground">视频加载失败</p>
               <p className="text-sm text-muted-foreground">
-                {work.source.startsWith('au') ? '音频ID' : 'BV号'}: {work.source}
+                BV号: {work.source}
               </p>
               <Button
                 variant="outline"
@@ -100,12 +116,7 @@ export function WorkModal({ work, open, onOpenChange }: WorkModalProps) {
               <Button
                 variant="link"
                 size="sm"
-                onClick={() => {
-                  const url = work.source.startsWith('au') 
-                    ? `https://www.bilibili.com/audio/${work.source}`
-                    : `https://www.bilibili.com/video/${work.source}`;
-                  window.open(url, '_blank');
-                }}
+                onClick={() => window.open(`https://www.bilibili.com/video/${work.source}`, '_blank')}
               >
                 在B站打开
               </Button>
@@ -114,18 +125,12 @@ export function WorkModal({ work, open, onOpenChange }: WorkModalProps) {
         }
 
         return (
-          <div className="relative w-full bg-black rounded-lg overflow-hidden" style={{ height: work.type === 'audio' ? '80px' : undefined, aspectRatio: work.type === 'audio' ? undefined : '16/9' }}>
+          <div className="relative w-full bg-black rounded-lg overflow-hidden aspect-video">
             {videoLoading && (
               <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-10">
                 <Loader2 className="w-8 h-8 animate-spin text-white" />
               </div>
             )}
-            {work.type === 'audio' ? (
-              <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-r from-purple-900/80 to-pink-900/80">
-                <Music className="w-8 h-8 text-white mb-2" />
-                <p className="text-white text-sm">音频播放中...</p>
-              </div>
-            ) : null}
             <iframe
               src={bilibiliUrl}
               className="absolute inset-0 w-full h-full"
