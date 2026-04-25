@@ -163,6 +163,13 @@ export default function Home() {
       );
     }
 
+    // 精选作品置顶
+    result = [...result].sort((a, b) => {
+      if (a.featured && !b.featured) return -1;
+      if (!a.featured && b.featured) return 1;
+      return b.createdAt - a.createdAt; // 同级别按时间倒序
+    });
+
     return result;
   }, [works, selectedCategory, selectedTag, searchQuery]);
 
