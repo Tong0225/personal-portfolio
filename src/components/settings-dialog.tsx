@@ -80,9 +80,10 @@ export function SettingsDialog({
         setPasswordEnabled(true);
       }
     } else {
-      // 关闭密码保护，需要验证密码
+      // 关闭密码保护，必须验证密码
       if (passwordStorage.get() !== '') {
         setIsChangingPassword(true);
+        setIsAuthenticated(false); // 强制重新验证密码
         setPasswordEnabled(false);
       } else {
         passwordStorage.setEnabled(false);
@@ -97,6 +98,13 @@ export function SettingsDialog({
     if (passwordStorage.verify(currentPassword)) {
       setIsAuthenticated(true);
       setPasswordError('');
+      
+      // 如果是关闭密码保护，验证成功后直接关闭
+      if (!passwordEnabled) {
+        passwordStorage.setEnabled(false);
+        onPasswordVerified();
+        onOpenChange(false);
+      }
     } else {
       setPasswordError('密码错误，请重试');
     }
