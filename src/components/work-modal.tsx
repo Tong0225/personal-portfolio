@@ -50,23 +50,27 @@ export function WorkModal({ work, open, onOpenChange }: WorkModalProps) {
 
   if (!work) return null;
 
-  // 构建B站视频URL
-  const getBilibiliUrl = (bvId: string): string => {
-    // 处理不同格式的BV号
-    let bvid = bvId.trim();
+  // 构建B站视频/音频URL
+  const getBilibiliUrl = (sourceId: string, type?: string): string => {
+    const id = sourceId.trim();
+    
+    // B站音频（au开头）
+    if (id.startsWith('au')) {
+      return `https://www.bilibili.com/audio/${id}`;
+    }
     
     // 如果包含BV前缀，直接使用
-    if (bvid.startsWith('BV')) {
-      return `https://player.bilibili.com/player.html?bvid=${bvid}&high_quality=1&autoplay=0`;
+    if (id.startsWith('BV')) {
+      return `https://player.bilibili.com/player.html?bvid=${id}&high_quality=1&autoplay=0`;
     }
     
     // 如果是纯数字（av号），转换为BV或直接使用
-    if (/^\d+$/.test(bvid)) {
-      return `https://player.bilibili.com/player.html?aid=${bvid}&high_quality=1&autoplay=0`;
+    if (/^\d+$/.test(id)) {
+      return `https://player.bilibili.com/player.html?aid=${id}&high_quality=1&autoplay=0`;
     }
     
     // 假设已经是纯BV号（没有BV前缀的情况）
-    return `https://player.bilibili.com/player.html?bvid=${bvid}&high_quality=1&autoplay=0`;
+    return `https://player.bilibili.com/player.html?bvid=${id}&high_quality=1&autoplay=0`;
   };
 
   const renderPreview = () => {
@@ -81,7 +85,7 @@ export function WorkModal({ work, open, onOpenChange }: WorkModalProps) {
               <AlertCircle className="w-12 h-12 text-destructive" />
               <p className="text-muted-foreground">{work.type === 'audio' ? '音频' : '视频'}加载失败</p>
               <p className="text-sm text-muted-foreground">
-                BV号: {work.source}
+                {work.source.startsWith('au') ? '音频ID' : 'BV号'}: {work.source}
               </p>
               <Button
                 variant="outline"
@@ -96,7 +100,12 @@ export function WorkModal({ work, open, onOpenChange }: WorkModalProps) {
               <Button
                 variant="link"
                 size="sm"
-                onClick={() => window.open(`https://www.bilibili.com/video/${work.source}`, '_blank')}
+                onClick={() => {
+                  const url = work.source.startsWith('au') 
+                    ? `https://www.bilibili.com/audio/${work.source}`
+                    : `https://www.bilibili.com/video/${work.source}`;
+                  window.open(url, '_blank');
+                }}
               >
                 在B站打开
               </Button>

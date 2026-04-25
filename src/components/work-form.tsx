@@ -108,13 +108,19 @@ export function WorkForm({ work, open, onOpenChange, onSubmit }: WorkFormProps) 
     
     if (!source.trim()) {
       newErrors.source = '请输入资源链接';
-    } else if (type === 'video' || type === 'audio') {
-      // 验证B站BV号格式 - 现在支持直接上传视频或输入BV号
+    } else if (type === 'video') {
+      // 验证B站BV号格式
       const bvRegex = /^(BV[a-zA-Z0-9]+|av\d+)$/;
-      // 如果不是BV号格式，检查是否是URL
       const isUrl = source.startsWith('http://') || source.startsWith('https://');
       if (!bvRegex.test(source.trim()) && !isUrl) {
-        newErrors.source = `请输入正确的B站BV号（如 BV1xx411c7mD）用于${type === 'audio' ? '音频' : '视频'}播放`;
+        newErrors.source = '请输入正确的B站BV号（如 BV1xx411c7mD）用于视频播放';
+      }
+    } else if (type === 'audio') {
+      // 验证B站音频au号格式
+      const auRegex = /^au\d+$/;
+      const isUrl = source.startsWith('http://') || source.startsWith('https://');
+      if (!auRegex.test(source.trim()) && !isUrl) {
+        newErrors.source = '请输入正确的B站音频ID（如 au10004738426）';
       }
     }
 
@@ -223,7 +229,7 @@ export function WorkForm({ work, open, onOpenChange, onSubmit }: WorkFormProps) 
                 type === 'video'
                   ? 'B站BV号（如 BV1xx411c7mD）或视频URL'
                   : type === 'audio'
-                  ? 'B站BV号（如 BV1xx411c7mD）用于音频播放'
+                  ? 'B站音频ID（如 au10004738426）'
                   : type === 'pdf'
                   ? 'PDF 文件链接'
                   : '图片直链'
@@ -240,7 +246,7 @@ export function WorkForm({ work, open, onOpenChange, onSubmit }: WorkFormProps) 
             )}
             {type === 'audio' && (
               <p className="text-xs text-muted-foreground">
-                输入B站BV号即可自动嵌入音频播放器
+                输入B站音频ID（au开头）即可自动嵌入播放器
               </p>
             )}
             {type === 'image' && (
