@@ -14,6 +14,7 @@ export function AboutPage({ onBack }: AboutPageProps) {
     name: '朱桐',
     phone: '18673564765',
     email: '3110205186@qq.com',
+    gmail: 'zmutong@gmail.com',
     gender: '女',
     location: '湖南郴州',
     education: '本科（2026届）',
@@ -41,10 +42,10 @@ export function AboutPage({ onBack }: AboutPageProps) {
 
   // 社交链接
   const socialLinks = [
-    { name: '邮箱', icon: Mail, url: 'mailto:3110205186@qq.com', color: 'hover:bg-blue-500' },
-    { name: 'GitHub', icon: Github, url: 'https://github.com', color: 'hover:bg-gray-800' },
+    { name: 'QQ邮箱', icon: Mail, url: 'mailto:3110205186@qq.com', color: 'hover:bg-blue-500' },
+    { name: 'Gmail', icon: Mail, url: 'mailto:zmutong@gmail.com', color: 'hover:bg-red-500' },
+    { name: 'GitHub', icon: Github, url: 'https://github.com/Tong0225', color: 'hover:bg-gray-800' },
     { name: 'B站', icon: Play, url: 'https://bilibili.com', color: 'hover:bg-pink-500' },
-    { name: '微博', icon: MessageCircle, url: 'https://weibo.com', color: 'hover:bg-red-500' },
   ];
 
   return (
@@ -77,6 +78,10 @@ export function AboutPage({ onBack }: AboutPageProps) {
                 <span className="flex items-center gap-1">
                   <Mail className="w-4 h-4" />
                   {personalInfo.email}
+                </span>
+                <span className="flex items-center gap-1">
+                  <Mail className="w-4 h-4" />
+                  {personalInfo.gmail}
                 </span>
                 <span className="flex items-center gap-1">
                   <MapPin className="w-4 h-4" />
@@ -177,6 +182,27 @@ export function AboutPage({ onBack }: AboutPageProps) {
           </CardContent>
         </Card>
 
+        {/* 工作经历 */}
+        <Card className="mb-8">
+          <CardContent className="p-6">
+            <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+              <Briefcase className="w-5 h-5 text-primary" />
+              工作经历
+            </h2>
+            <div className="space-y-6">
+              <div className="space-y-2">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <div className="font-medium">盛美文化有限公司（网易郴州）</div>
+                    <div className="text-sm text-muted-foreground">编导、新媒体运营</div>
+                  </div>
+                  <div className="text-sm text-muted-foreground">2025.12 - 2026.04</div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* 实习经历 */}
         <Card className="mb-8">
           <CardContent className="p-6">
@@ -185,15 +211,6 @@ export function AboutPage({ onBack }: AboutPageProps) {
               实习经历
             </h2>
             <div className="space-y-6">
-              <div className="space-y-2">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <div className="font-medium">盛美文化有限公司</div>
-                    <div className="text-sm text-muted-foreground">编导、新媒体运营</div>
-                  </div>
-                  <div className="text-sm text-muted-foreground">2025.12 - 2026.04</div>
-                </div>
-              </div>
               <div className="space-y-2">
                 <div className="flex justify-between items-start">
                   <div>
