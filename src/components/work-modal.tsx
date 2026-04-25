@@ -161,6 +161,16 @@ export function WorkModal({ work, open, onOpenChange }: WorkModalProps) {
                 {getCategoryPath(work.category)}
               </p>
             </div>
+            {/* 在新窗口打开按钮 - 移到右上角醒目位置 */}
+            <Button
+              variant="default"
+              size="sm"
+              onClick={() => window.open(work.source, '_blank')}
+              className="shrink-0"
+            >
+              <ExternalLink className="mr-2 h-4 w-4" />
+              在新窗口打开
+            </Button>
           </div>
 
           {/* 标签 */}
@@ -187,17 +197,9 @@ export function WorkModal({ work, open, onOpenChange }: WorkModalProps) {
           </div>
         )}
 
-        {/* 原链接 */}
-        <div className="mt-4 flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => window.open(work.source, '_blank')}
-          >
-            <ExternalLink className="mr-2 h-4 w-4" />
-            在新窗口打开
-          </Button>
-          {work.type === 'video' && (
+        {/* B站链接（仅视频类型显示） */}
+        {work.type === 'video' && (
+          <div className="mt-4">
             <Button
               variant="outline"
               size="sm"
@@ -206,8 +208,8 @@ export function WorkModal({ work, open, onOpenChange }: WorkModalProps) {
               <Video className="mr-2 h-4 w-4" />
               在B站查看
             </Button>
-          )}
-        </div>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );
