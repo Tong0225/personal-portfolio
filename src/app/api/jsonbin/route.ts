@@ -96,14 +96,17 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { works } = body;
+    const { works, binId: customBinId, apiKey: customApiKey } = body;
     
     if (!Array.isArray(works)) {
       return NextResponse.json({ error: 'Invalid data' }, { status: 400 });
     }
 
-    // 使用默认配置
-    const result = await saveToCloud(DEFAULT_BIN_ID, works, DEFAULT_API_KEY);
+    // 优先使用前端传来的配置，否则使用默认值
+    const binId = customBinId || DEFAULT_BIN_ID;
+    const apiKey = customApiKey || DEFAULT_API_KEY;
+    
+    const result = await saveToCloud(binId, works, apiKey);
     return NextResponse.json(result);
   } catch (error) {
     console.error('JSONBin save error:', error);

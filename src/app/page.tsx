@@ -210,7 +210,8 @@ export default function Home() {
     if (!binId && syncKey) {
       binId = 'portfolio-' + btoa(syncKey).replace(/[^a-zA-Z0-9]/g, '').substring(0, 16);
     } else if (!binId) {
-      binId = 'portfolio-default-zhutong';
+      // 使用默认的共享 bin（朱桐作品集）
+      binId = '69ec3e18856a6821896df20a';
     }
     
     const apiKey = localStorage.getItem('portfolio-jsonbin-api-key') || '';
