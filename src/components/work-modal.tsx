@@ -118,7 +118,7 @@ export function WorkModal({ work, open, onOpenChange }: WorkModalProps) {
 
       case 'pdf':
         return (
-          <div className="relative w-full h-[70vh] bg-muted rounded-lg overflow-hidden">
+          <div className="relative w-full h-[80vh] bg-muted rounded-lg overflow-hidden">
             <iframe
               src={`https://mozilla.github.io/pdf.js/web/viewer.html?file=${encodeURIComponent(work.source)}`}
               className="absolute inset-0 w-full h-full"
@@ -134,7 +134,7 @@ export function WorkModal({ work, open, onOpenChange }: WorkModalProps) {
             <img
               src={work.source}
               alt={work.title}
-              className="max-w-full max-h-[70vh] object-contain"
+              className="max-w-full max-h-[80vh] object-contain"
             />
           </div>
         );
@@ -143,7 +143,7 @@ export function WorkModal({ work, open, onOpenChange }: WorkModalProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-[95vw] max-h-[95vh] overflow-y-auto">
         <DialogHeader className="space-y-4">
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1">
