@@ -50,6 +50,7 @@ export function SettingsDialog({
   const [confirmError, setConfirmError] = useState('');
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [isCategoryManagerOpen, setIsCategoryManagerOpen] = useState(false);
+  const [isClearingPassword, setIsClearingPassword] = useState(false); // 清除密码流程
 
   useEffect(() => {
     if (open) {
@@ -63,6 +64,7 @@ export function SettingsDialog({
       setConfirmError('');
       setIsAuthenticated(!enabled || !hasPassword);
       setIsChangingPassword(false);
+      setIsClearingPassword(false);
     }
   }, [open]);
 
@@ -100,8 +102,17 @@ export function SettingsDialog({
       setPasswordError('');
       
       // 如果是关闭密码保护，验证成功后直接关闭
-      if (!passwordEnabled) {
+      if (!passwordEnabled && !isClearingPassword) {
         passwordStorage.setEnabled(false);
+        onPasswordVerified();
+        onOpenChange(false);
+      }
+      
+      // 如果是清除密码流程，验证成功后清除密码
+      if (isClearingPassword) {
+        passwordStorage.clear();
+        setPasswordEnabled(false);
+        setIsClearingPassword(false);
         onPasswordVerified();
         onOpenChange(false);
       }
@@ -254,30 +265,56 @@ export function SettingsDialog({
             </div>
           )}
 
-          {/* 清除密码保护 */}
-          {hasExistingPassword && passwordEnabled && !isChangingPassword && (
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="outline" className="w-full text-destructive hover:text-destructive">
-                  <AlertTriangle className="mr-2 h-4 w-4" />
-                  清除密码保护
+          {/* 清除密码保护 - 点击后显示密码验证 */}
+          {hasExistingPassword && passwordEnabled && !isChangingPassword && !isClearingPassword && (
+            <Button 
+              variant="outline" 
+              className="w-full text-destructive hover:text-destructive"
+              onClick={() => {
+                setIsClearingPassword(true);
+                setIsAuthenticated(false);
+                setPasswordError('');
+                setCurrentPassword('');
+              }}
+            >
+              <AlertTriangle className="mr-2 h-4 h-4" />
+              清除密码保护
+            </Button>
+          )}
+
+          {/* 清除密码保护 - 密码验证界面 */}
+          {isClearingPassword && !isAuthenticated && (
+            <div className="space-y-3 border rounded-lg p-4 bg-muted/50">
+              <Label className="text-sm font-medium flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-yellow-500" />
+                请输入密码以清除密码保护
+              </Label>
+              <Input
+                type="password"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                placeholder="输入当前密码"
+              />
+              {passwordError && (
+                <p className="text-sm text-destructive">{passwordError}</p>
+              )}
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  className="flex-1"
+                  onClick={() => {
+                    setIsClearingPassword(false);
+                    setPasswordError('');
+                    setCurrentPassword('');
+                  }}
+                >
+                  取消
                 </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>确定清除密码保护？</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    清除后，所有人无需密码即可管理作品，此操作不可撤销。
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>取消</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleClearPassword}>
-                    确定清除
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+                <Button onClick={handleVerifyPassword} className="flex-1">
+                  验证并清除
+                </Button>
+              </div>
+            </div>
           )}
 
           {/* 分类管理 */}
