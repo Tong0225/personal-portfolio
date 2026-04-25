@@ -145,7 +145,7 @@ export function WorkModal({ work, open, onOpenChange }: WorkModalProps) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-[95vw] max-h-[95vh] overflow-y-auto">
         <DialogHeader className="space-y-4">
-          <div className="flex items-start justify-between gap-4">
+          <div className="flex items-center justify-between gap-4">
             <div className="flex-1">
               <DialogTitle className="text-xl flex items-center gap-2">
                 {work.title}
@@ -161,16 +161,28 @@ export function WorkModal({ work, open, onOpenChange }: WorkModalProps) {
                 {getCategoryPath(work.category)}
               </p>
             </div>
-            {/* 在新窗口打开按钮 - 移到右上角醒目位置 */}
+          </div>
+
+          {/* 操作按钮行 - 标题下方 */}
+          <div className="flex items-center gap-2">
             <Button
               variant="default"
               size="sm"
               onClick={() => window.open(work.source, '_blank')}
-              className="shrink-0"
             >
               <ExternalLink className="mr-2 h-4 w-4" />
               在新窗口打开
             </Button>
+            {work.type === 'video' && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => window.open(`https://www.bilibili.com/video/${work.source}`, '_blank')}
+              >
+                <Video className="mr-2 h-4 w-4" />
+                在B站查看
+              </Button>
+            )}
           </div>
 
           {/* 标签 */}
@@ -194,20 +206,6 @@ export function WorkModal({ work, open, onOpenChange }: WorkModalProps) {
           <div className="mt-4 p-4 bg-muted/50 rounded-lg">
             <h4 className="font-medium mb-2">作品描述</h4>
             <p className="text-muted-foreground">{work.description}</p>
-          </div>
-        )}
-
-        {/* B站链接（仅视频类型显示） */}
-        {work.type === 'video' && (
-          <div className="mt-4">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => window.open(`https://www.bilibili.com/video/${work.source}`, '_blank')}
-            >
-              <Video className="mr-2 h-4 w-4" />
-              在B站查看
-            </Button>
           </div>
         )}
       </DialogContent>
