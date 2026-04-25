@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Category, getCategoryPath } from '@/lib/works';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -192,15 +192,16 @@ export function CategorySelect({ value, onChange, categories }: CategorySelectPr
   const [childId, setChildId] = useState('');
 
   // 从value中解析父分类
-  useState(() => {
+  useEffect(() => {
     if (value && value.includes(':')) {
-      const [p, c] = value.split(':');
-      setParentId(p);
-      setChildId(c);
-    } else {
+      const parts = value.split(':');
+      setParentId(parts[0]);
+      setChildId(value);
+    } else if (value) {
       setParentId(value);
+      setChildId('');
     }
-  });
+  }, [value]);
 
   const handleParentChange = (newParentId: string) => {
     setParentId(newParentId);

@@ -1,10 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Category, customCategoriesStorage, defaultCategories, generateId } from '@/lib/works';
+import { Category, customCategoriesStorage, generateId } from '@/lib/works';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import {
   Dialog,
   DialogContent,
@@ -102,39 +101,16 @@ export function CategoryManager({ open, onOpenChange, onCategoriesChange }: Cate
   // 获取所有一级分类
   const getAllParentCategories = () => {
     const parents: Category[] = [];
-    defaultCategories.forEach(cat => {
-      if (cat.id !== 'all') {
-        parents.push({...cat, children: []});
-      }
-    });
-    // 添加自定义一级分类
+    // 只使用自定义一级分类
     customCategories.filter(c => !c.id.includes(':')).forEach(cat => {
-      const existing = parents.find(p => p.id === cat.id);
-      if (!existing) {
-        parents.push({...cat, children: []});
-      }
+      parents.push({...cat, children: []});
     });
     return parents;
   };
 
   // 获取某个一级分类下的所有子分类
   const getChildren = (parentId: string) => {
-    const children: Category[] = [];
-    
-    // 默认子分类
-    const defaultParent = defaultCategories.find(c => c.id === parentId);
-    if (defaultParent?.children) {
-      defaultParent.children.forEach(child => {
-        children.push(child);
-      });
-    }
-    
-    // 自定义子分类
-    customCategories.filter(c => c.id.startsWith(parentId + ':')).forEach(child => {
-      children.push(child);
-    });
-    
-    return children;
+    return customCategories.filter(c => c.id.startsWith(parentId + ':'));
   };
 
   return (
@@ -150,9 +126,9 @@ export function CategoryManager({ open, onOpenChange, onCategoriesChange }: Cate
         <div className="space-y-4 py-4">
           {/* 提示信息 */}
           <div className="text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg">
-            <p>• 默认分类不可删除，仅可添加自定义子分类</p>
-            <p>• 自定义分类（一级/二级）可以添加或删除</p>
-            <p>• 删除自定义分类不会影响其下的作品</p>
+            <p>• 点击"添加新一级分类"创建新的分类</p>
+            <p>• 在一级分类下可以添加二级分类</p>
+            <p>• 删除分类不会影响其下的作品</p>
           </div>
 
           {/* 一级分类列表 */}
@@ -160,13 +136,10 @@ export function CategoryManager({ open, onOpenChange, onCategoriesChange }: Cate
             {getAllParentCategories().map(parent => {
               const children = getChildren(parent.id);
               const isExpanded = expandedCategories.has(parent.id);
-              const isCustom = parent.id.startsWith('custom:');
               
               return (
-                <div key={parent.id} className="border rounded-lg overflow-hidden">
-                  <div 
-                    className={`flex items-center justify-between p-3 ${isCustom ? 'bg-primary/5' : ''}`}
-                  >
+                <div key={parent.id} className="border rounded-lg overflow-hidden bg-primary/5">
+                  <div className="flex items-center justify-between p-3">
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => toggleExpand(parent.id)}
@@ -180,7 +153,6 @@ export function CategoryManager({ open, onOpenChange, onCategoriesChange }: Cate
                       </button>
                       <span className="text-lg">{parent.icon}</span>
                       <span className="font-medium">{parent.name}</span>
-                      {isCustom && <Badge variant="secondary" className="text-xs">自定义</Badge>}
                     </div>
                     <div className="flex items-center gap-2">
                       <Button
@@ -194,18 +166,16 @@ export function CategoryManager({ open, onOpenChange, onCategoriesChange }: Cate
                         <Plus className="w-4 h-4 mr-1" />
                         添加子分类
                       </Button>
-                      {isCustom && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => {
-                            setCategoryToDelete(parent);
-                            setIsDeleteDialogOpen(true);
-                          }}
-                        >
-                          <Trash2 className="w-4 h-4 text-destructive" />
-                        </Button>
-                      )}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          setCategoryToDelete(parent);
+                          setIsDeleteDialogOpen(true);
+                        }}
+                      >
+                        <Trash2 className="w-4 h-4 text-destructive" />
+                      </Button>
                     </div>
                   </div>
                   
@@ -213,7 +183,6 @@ export function CategoryManager({ open, onOpenChange, onCategoriesChange }: Cate
                   {isExpanded && children.length > 0 && (
                     <div className="border-t bg-muted/20">
                       {children.map(child => {
-                        const isChildCustom = child.id.includes('custom:') || customCategories.some(c => c.id === child.id);
                         return (
                           <div
                             key={child.id}
@@ -222,20 +191,17 @@ export function CategoryManager({ open, onOpenChange, onCategoriesChange }: Cate
                             <div className="flex items-center gap-2">
                               <span>{child.icon}</span>
                               <span>{child.name}</span>
-                              {isChildCustom && <Badge variant="outline" className="text-xs">自定义</Badge>}
                             </div>
-                            {isChildCustom && (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => {
-                                  setCategoryToDelete(child);
-                                  setIsDeleteDialogOpen(true);
-                                }}
-                              >
-                                <Trash2 className="w-4 h-4 text-destructive" />
-                              </Button>
-                            )}
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => {
+                                setCategoryToDelete(child);
+                                setIsDeleteDialogOpen(true);
+                              }}
+                            >
+                              <Trash2 className="w-4 h-4 text-destructive" />
+                            </Button>
                           </div>
                         );
                       })}
@@ -244,6 +210,13 @@ export function CategoryManager({ open, onOpenChange, onCategoriesChange }: Cate
                 </div>
               );
             })}
+            
+            {getAllParentCategories().length === 0 && (
+              <div className="text-center py-8 text-muted-foreground">
+                <p>暂无分类</p>
+                <p className="text-sm mt-1">点击下方按钮添加一级分类</p>
+              </div>
+            )}
           </div>
 
           {/* 添加新一级分类按钮 */}

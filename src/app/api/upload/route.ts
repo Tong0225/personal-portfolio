@@ -1,21 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { S3Storage } from 'coze-coding-dev-sdk';
-
-const storage = new S3Storage({
-  endpointUrl: process.env.COZE_BUCKET_ENDPOINT_URL,
-  bucketName: process.env.COZE_BUCKET_NAME,
-  region: 'cn-beijing',
-});
 
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
     const file = formData.get('file') as File | null;
-    const type = formData.get('type') as string || 'image'; // image, video, pdf
+    const type = formData.get('type') as string || 'image';
 
     if (!file) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
     }
+
+    // 检查是否配置了S3存储
+    if (!process.env.COZE_BUCKET_ENDPOINT_URL || !process.env.COZE_BUCKET_NAME) {
+      return NextResponse.json({ 
+        error: '暂不支持本地上传，请使用URL方式添加作品',
+        hint: '您可以将图片/PDF上传到图床（如 imgbb.com）或GitHub，然后粘贴链接',
+        code: 'UPLOAD_NOT_SUPPORTED'
+      }, { status: 400 });
+    }
+
+    // 如果有S3配置，使用S3上传
+    const { S3Storage } = await import('coze-coding-dev-sdk');
+    const storage = new S3Storage({
+      endpointUrl: process.env.COZE_BUCKET_ENDPOINT_URL,
+      bucketName: process.env.COZE_BUCKET_NAME,
+      region: 'cn-beijing',
+    });
 
     // 验证文件类型
     const allowedTypes = {

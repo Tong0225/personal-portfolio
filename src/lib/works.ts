@@ -21,56 +21,30 @@ export interface Category {
   children?: Category[];
 }
 
-// 预设分类（一级）
+// 预设分类（一级）- 只保留"全部"，其他由用户自定义
 export const defaultCategories: Category[] = [
   { id: 'all', name: '全部', icon: '📁' },
-  { id: 'design', name: '设计', icon: '🎨', children: [
-    { id: 'design:ui', name: 'UI设计', icon: '📱' },
-    { id: 'design:brand', name: '品牌设计', icon: '🏷️' },
-    { id: 'design:print', name: '印刷设计', icon: '📄' },
-    { id: 'design:other', name: '其他设计', icon: '🎯' },
-  ]},
-  { id: 'video', name: '视频', icon: '🎬', children: [
-    { id: 'video:mv', name: '短片', icon: '🎥' },
-    { id: 'video:motion', name: '动效', icon: '✨' },
-    { id: 'video:other', name: '其他', icon: '🎞️' },
-  ]},
-  { id: 'photo', name: '摄影', icon: '📷', children: [
-    { id: 'photo:portrait', name: '人像', icon: '👤' },
-    { id: 'photo:landscape', name: '风光', icon: '🏔️' },
-    { id: 'photo:product', name: '产品', icon: '📦' },
-    { id: 'photo:other', name: '其他', icon: '📸' },
-  ]},
-  { id: 'code', name: '代码', icon: '💻', children: [
-    { id: 'code:web', name: '网页', icon: '🌐' },
-    { id: 'code:app', name: '应用', icon: '📲' },
-    { id: 'code:game', name: '游戏', icon: '🎮' },
-    { id: 'code:other', name: '其他', icon: '⚙️' },
-  ]},
-  { id: 'other', name: '其他', icon: '📦', children: [
-    { id: 'other:writing', name: '写作', icon: '✍️' },
-    { id: 'other:music', name: '音乐', icon: '🎵' },
-    { id: 'other:3d', name: '3D', icon: '🎲' },
-    { id: 'other:other', name: '其他', icon: '📋' },
-  ]},
 ];
 
-// 获取所有叶子分类（用于选择）
+// 获取所有叶子分类（用于选择）- 从自定义分类中获取
 export function getAllLeafCategories(): Category[] {
   const leaves: Category[] = [];
+  const custom = customCategoriesStorage.getAll();
   
-  function traverse(categories: Category[]) {
-    for (const cat of categories) {
-      if (cat.id === 'all') continue;
-      if (cat.children && cat.children.length > 0) {
-        traverse(cat.children);
-      } else {
-        leaves.push(cat);
-      }
+  // 找出所有二级分类（叶子节点）
+  custom.forEach(cat => {
+    if (cat.id.includes(':')) {
+      leaves.push(cat);
     }
+  });
+  
+  // 如果没有二级分类，返回一级分类
+  if (leaves.length === 0) {
+    custom.filter(c => !c.id.includes(':')).forEach(cat => {
+      leaves.push(cat);
+    });
   }
   
-  traverse(defaultCategories);
   return leaves;
 }
 
@@ -78,17 +52,22 @@ export function getAllLeafCategories(): Category[] {
 export function getCategoryPath(categoryId: string): string {
   if (categoryId === 'all') return '全部';
   
-  for (const cat of defaultCategories) {
-    if (cat.children) {
-      for (const child of cat.children) {
-        if (child.id === categoryId) {
-          return `${cat.name} > ${child.name}`;
-        }
-      }
+  const custom = customCategoriesStorage.getAll();
+  
+  // 如果是二级分类
+  if (categoryId.includes(':')) {
+    const parentId = categoryId.split(':')[0];
+    const parent = custom.find(c => c.id === parentId);
+    const child = custom.find(c => c.id === categoryId);
+    if (parent && child) {
+      return `${parent.name} > ${child.name}`;
     }
-    if (cat.id === categoryId) {
-      return cat.name;
-    }
+  }
+  
+  // 如果是一级分类
+  const cat = custom.find(c => c.id === categoryId);
+  if (cat) {
+    return cat.name;
   }
   
   return categoryId;
@@ -98,77 +77,18 @@ export function getCategoryPath(categoryId: string): string {
 export function getParentCategory(categoryId: string): Category | null {
   if (categoryId === 'all') return null;
   
-  for (const cat of defaultCategories) {
-    if (cat.children) {
-      for (const child of cat.children) {
-        if (child.id === categoryId) {
-          return cat;
-        }
-      }
-    }
-    if (cat.id === categoryId) {
-      return cat;
-    }
+  const custom = customCategoriesStorage.getAll();
+  
+  if (categoryId.includes(':')) {
+    const parentId = categoryId.split(':')[0];
+    return custom.find(c => c.id === parentId) || null;
   }
   
-  return null;
+  return custom.find(c => c.id === categoryId) || null;
 }
 
-// 示例作品数据
-export const sampleWorks: Work[] = [
-  {
-    id: '1',
-    title: '创意海报设计',
-    type: 'image',
-    category: 'design:ui',
-    subCategory: 'UI设计',
-    tags: ['海报', '平面设计', '创意'],
-    description: '这是一组创意海报设计作品，灵感来源于现代艺术风格。',
-    source: 'https://images.unsplash.com/photo-1558655146-9f40138edfeb?w=800',
-    thumbnail: 'https://images.unsplash.com/photo-1558655146-9f40138edfeb?w=400',
-    featured: true,
-    createdAt: Date.now() - 86400000 * 7,
-  },
-  {
-    id: '2',
-    title: '产品设计展示',
-    type: 'video',
-    category: 'design:ui',
-    subCategory: 'UI设计',
-    tags: ['产品', '设计', '展示'],
-    description: '产品设计理念与实现过程的完整展示视频。',
-    source: 'BV1xx411c7mD',
-    thumbnail: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400',
-    featured: true,
-    createdAt: Date.now() - 86400000 * 5,
-  },
-  {
-    id: '3',
-    title: 'UI界面设计',
-    type: 'image',
-    category: 'design:ui',
-    subCategory: 'UI设计',
-    tags: ['UI', '界面', 'APP'],
-    description: '移动端APP界面设计，包含多个页面的完整设计稿。',
-    source: 'https://images.unsplash.com/photo-1545235617-9465d2a55698?w=800',
-    thumbnail: 'https://images.unsplash.com/photo-1545235617-9465d2a55698?w=400',
-    featured: false,
-    createdAt: Date.now() - 86400000 * 3,
-  },
-  {
-    id: '4',
-    title: '品牌视觉设计',
-    type: 'image',
-    category: 'design:brand',
-    subCategory: '品牌设计',
-    tags: ['品牌', '视觉', 'VI'],
-    description: '企业品牌视觉识别系统设计，包括logo、名片等。',
-    source: 'https://images.unsplash.com/photo-1558655146-d09347e92766?w=800',
-    thumbnail: 'https://images.unsplash.com/photo-1558655146-d09347e92766?w=400',
-    featured: true,
-    createdAt: Date.now() - 86400000 * 2,
-  },
-];
+// 示例作品数据（空，由用户自己添加）
+export const sampleWorks: Work[] = [];
 
 // 生成分页ID
 export function generateId(): string {
@@ -214,35 +134,52 @@ export const customCategoriesStorage = {
     customCategoriesStorage.saveAll(categories);
   },
 
-  // 获取合并后的所有分类（默认 + 自定义）
+  // 获取合并后的所有分类（默认"全部" + 自定义分类）
   getMergedCategories: (): Category[] => {
-    const merged = JSON.parse(JSON.stringify(defaultCategories)); // 深拷贝
     const custom = customCategoriesStorage.getAll();
     
-    // 将自定义分类添加到对应位置
-    custom.forEach(cat => {
-      // 检查是否有一级分类
-      if (cat.id.includes(':')) {
-        const parentId = cat.id.split(':')[0];
-        const parentIndex = merged.findIndex((c: Category) => c.id === parentId);
-        
-        if (parentIndex !== -1 && merged[parentIndex].children) {
-          // 检查是否已存在该子分类
-          const exists = merged[parentIndex].children!.some((c: Category) => c.id === cat.id);
-          if (!exists) {
-            merged[parentIndex].children!.push({...cat, name: cat.name});
-          }
-        }
-      } else {
-        // 作为新的一级分类添加
-        const exists = merged.some((c: Category) => c.id === cat.id);
-        if (!exists) {
-          merged.push({...cat, children: []});
-        }
-      }
+    // 构建分类树
+    const result: Category[] = [{ id: 'all', name: '全部', icon: '📁' }];
+    
+    // 找出所有一级分类（不包含冒号的）
+    const parentCategories = custom.filter(c => !c.id.includes(':'));
+    
+    // 为每个一级分类添加其子分类
+    parentCategories.forEach(parent => {
+      const children = custom.filter(c => c.id.startsWith(parent.id + ':'));
+      result.push({
+        ...parent,
+        children: children.length > 0 ? children : undefined
+      });
     });
     
-    return merged;
+    // 找出独立的二级分类（没有对应的一级分类）
+    const orphanChildren = custom.filter(c => {
+      if (!c.id.includes(':')) return false;
+      const parentId = c.id.split(':')[0];
+      return !parentCategories.some(p => p.id === parentId);
+    });
+    
+    // 为孤立的二级分类创建一级分类
+    const orphanParents = new Map<string, Category>();
+    orphanChildren.forEach(child => {
+      const parentId = child.id.split(':')[0];
+      if (!orphanParents.has(parentId)) {
+        orphanParents.set(parentId, {
+          id: parentId,
+          name: parentId,
+          icon: '📁',
+          children: []
+        });
+      }
+      orphanParents.get(parentId)!.children!.push(child);
+    });
+    
+    orphanParents.forEach(parent => {
+      result.push(parent);
+    });
+    
+    return result;
   },
   
   // 添加一级自定义分类

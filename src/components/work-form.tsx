@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import { Work, defaultCategories, getAllLeafCategories } from '@/lib/works';
+import { useState, useEffect } from 'react';
+import { Work, defaultCategories, getAllLeafCategories, customCategoriesStorage } from '@/lib/works';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { X, Upload, Loader2, Image as ImageIcon, CloudUpload } from 'lucide-react';
+import { X } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -35,7 +35,7 @@ interface WorkFormProps {
 export function WorkForm({ work, open, onOpenChange, onSubmit }: WorkFormProps) {
   const [title, setTitle] = useState('');
   const [type, setType] = useState<Work['type']>('image');
-  const [category, setCategory] = useState('design:ui');
+  const [category, setCategory] = useState('');
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
   const [description, setDescription] = useState('');
@@ -43,13 +43,7 @@ export function WorkForm({ work, open, onOpenChange, onSubmit }: WorkFormProps) 
   const [thumbnail, setThumbnail] = useState('');
   const [featured, setFeatured] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  
-  // 上传相关状态
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [uploadError, setUploadError] = useState('');
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const thumbnailInputRef = useRef<HTMLInputElement>(null);
+  const [categories, setCategories] = useState(defaultCategories);
 
   useEffect(() => {
     if (work) {
@@ -65,7 +59,7 @@ export function WorkForm({ work, open, onOpenChange, onSubmit }: WorkFormProps) 
       // 重置表单
       setTitle('');
       setType('image');
-      setCategory('design:ui');
+      setCategory('');
       setTags([]);
       setDescription('');
       setSource('');
@@ -74,7 +68,8 @@ export function WorkForm({ work, open, onOpenChange, onSubmit }: WorkFormProps) 
     }
     setTagInput('');
     setErrors({});
-    setUploadError('');
+    // 加载用户自定义分类
+    setCategories(customCategoriesStorage.getMergedCategories());
   }, [work, open]);
 
   const addTag = () => {
@@ -96,82 +91,6 @@ export function WorkForm({ work, open, onOpenChange, onSubmit }: WorkFormProps) 
     }
   };
 
-  // 上传文件
-  const uploadFile = async (file: File, target: 'source' | 'thumbnail'): Promise<string | null> => {
-    setIsUploading(true);
-    setUploadProgress(0);
-    setUploadError('');
-
-    try {
-      const formData = new FormData();
-      const uploadType = target === 'source' && type === 'video' ? 'video' : 'image';
-      formData.append('file', file);
-      formData.append('type', uploadType);
-
-      const response = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Upload failed');
-      }
-
-      const result = await response.json();
-      setUploadProgress(100);
-      
-      return result.url;
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Upload failed';
-      setUploadError(message);
-      return null;
-    } finally {
-      setIsUploading(false);
-    }
-  };
-
-  // 处理文件选择
-  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>, target: 'source' | 'thumbnail') => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const url = await uploadFile(file, target);
-    if (url) {
-      if (target === 'source') {
-        setSource(url);
-      } else {
-        setThumbnail(url);
-      }
-    }
-    
-    // 重置input
-    e.target.value = '';
-  };
-
-  // 处理拖拽
-  const handleDrop = async (e: React.DragEvent, target: 'source' | 'thumbnail') => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    const file = e.dataTransfer.files?.[0];
-    if (!file) return;
-
-    const url = await uploadFile(file, target);
-    if (url) {
-      if (target === 'source') {
-        setSource(url);
-      } else {
-        setThumbnail(url);
-      }
-    }
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-  };
-
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
     
@@ -179,15 +98,23 @@ export function WorkForm({ work, open, onOpenChange, onSubmit }: WorkFormProps) 
       newErrors.title = '请输入作品标题';
     }
     
+    // 检查是否有自定义分类
+    const userCategories = categories.filter(c => c.id !== 'all');
+    if (userCategories.length === 0) {
+      newErrors.category = '请先在侧边栏添加分类';
+    } else if (!category.trim()) {
+      newErrors.category = '请选择分类';
+    }
+    
     if (!source.trim()) {
-      newErrors.source = '请上传资源或输入链接';
+      newErrors.source = '请输入资源链接';
     } else if (type === 'video') {
       // 验证B站BV号格式 - 现在支持直接上传视频或输入BV号
       const bvRegex = /^(BV[a-zA-Z0-9]+|av\d+)$/;
       // 如果不是BV号格式，检查是否是URL
       const isUrl = source.startsWith('http://') || source.startsWith('https://');
       if (!bvRegex.test(source.trim()) && !isUrl) {
-        newErrors.source = '请输入正确的B站BV号（如 BV1xx411c7mD）或上传视频文件';
+        newErrors.source = '请输入正确的B站BV号（如 BV1xx411c7mD）或视频链接';
       }
     }
 
@@ -263,59 +190,30 @@ export function WorkForm({ work, open, onOpenChange, onSubmit }: WorkFormProps) 
 
             <div className="space-y-2">
               <Label>分类 *</Label>
-              <CategorySelect
-                value={category}
-                onChange={setCategory}
-                categories={defaultCategories}
-              />
+              {categories.filter(c => c.id !== 'all').length === 0 ? (
+                <div className="p-4 bg-muted rounded-lg text-center">
+                  <p className="text-sm text-muted-foreground mb-2">暂无分类，请先添加分类</p>
+                  <p className="text-xs text-muted-foreground">点击侧边栏的"管理分类"按钮添加</p>
+                </div>
+              ) : (
+                <CategorySelect
+                  value={category}
+                  onChange={setCategory}
+                  categories={categories}
+                />
+              )}
+              {errors.category && (
+                <p className="text-sm text-destructive">{errors.category}</p>
+              )}
             </div>
           </div>
 
-          {/* 资源链接/上传 */}
+          {/* 资源链接 */}
           <div className="space-y-2">
             <Label htmlFor="source">
-              {type === 'video' ? '视频（B站BV号或上传视频）' : '资源链接/上传'}
+              {type === 'video' ? '视频链接' : type === 'pdf' ? 'PDF链接' : '图片链接'} *
             </Label>
             
-            {/* 上传区域 */}
-            <div
-              className="border-2 border-dashed rounded-lg p-6 text-center hover:border-primary/50 transition-colors cursor-pointer"
-              onClick={() => fileInputRef.current?.click()}
-              onDrop={(e) => handleDrop(e, 'source')}
-              onDragOver={handleDragOver}
-            >
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept={type === 'video' ? 'video/*' : type === 'image' ? 'image/*' : '.pdf'}
-                className="hidden"
-                onChange={(e) => handleFileSelect(e, 'source')}
-                disabled={isUploading}
-              />
-              <div className="flex flex-col items-center gap-2">
-                {isUploading ? (
-                  <>
-                    <Loader2 className="w-8 h-8 animate-spin text-primary" />
-                    <p className="text-sm text-muted-foreground">上传中... {uploadProgress}%</p>
-                  </>
-                ) : (
-                  <>
-                    <CloudUpload className="w-8 h-8 text-muted-foreground" />
-                    <p className="text-sm text-muted-foreground">
-                      点击或拖拽上传{type === 'video' ? '视频' : type === 'image' ? '图片' : 'PDF'}
-                    </p>
-                  </>
-                )}
-              </div>
-            </div>
-
-            {/* 或者输入链接 */}
-            <div className="flex items-center gap-2">
-              <div className="flex-1 border-t" />
-              <span className="text-xs text-muted-foreground">或者输入链接</span>
-              <div className="flex-1 border-t" />
-            </div>
-
             <Input
               id="source"
               value={source}
@@ -332,69 +230,43 @@ export function WorkForm({ work, open, onOpenChange, onSubmit }: WorkFormProps) 
             {errors.source && (
               <p className="text-sm text-destructive">{errors.source}</p>
             )}
-            {uploadError && (
-              <p className="text-sm text-destructive">{uploadError}</p>
-            )}
             {type === 'video' && (
               <p className="text-xs text-muted-foreground">
-                支持上传视频文件或输入B站BV号
+                输入B站BV号即可自动嵌入播放器
+              </p>
+            )}
+            {type === 'image' && (
+              <p className="text-xs text-muted-foreground">
+                可使用图床（如 imgbb.com）获取图片链接
+              </p>
+            )}
+            {type === 'pdf' && (
+              <p className="text-xs text-muted-foreground">
+                可将PDF上传到GitHub或云存储获取链接
               </p>
             )}
           </div>
 
           {/* 缩略图 */}
           <div className="space-y-2">
-            <Label>缩略图</Label>
-            
-            {/* 缩略图上传区域 */}
-            <div
-              className="border-2 border-dashed rounded-lg p-4 text-center hover:border-primary/50 transition-colors cursor-pointer"
-              onClick={() => thumbnailInputRef.current?.click()}
-              onDrop={(e) => handleDrop(e, 'thumbnail')}
-              onDragOver={handleDragOver}
-            >
-              <input
-                ref={thumbnailInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={(e) => handleFileSelect(e, 'thumbnail')}
-                disabled={isUploading}
-              />
-              {thumbnail ? (
-                <div className="relative w-full">
-                  <img
-                    src={thumbnail}
-                    alt="缩略图预览"
-                    className="w-full h-32 object-cover rounded"
-                  />
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setThumbnail('');
-                    }}
-                    className="absolute top-1 right-1 p-1 bg-destructive text-destructive-foreground rounded-full"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center gap-2 py-4">
-                  <ImageIcon className="w-6 h-6 text-muted-foreground" />
-                  <p className="text-xs text-muted-foreground">
-                    点击上传缩略图
-                  </p>
-                </div>
-              )}
-            </div>
-
-            {/* 或输入链接 */}
+            <Label>缩略图链接（可选）</Label>
             <Input
               value={thumbnail}
               onChange={(e) => setThumbnail(e.target.value)}
-              placeholder="或输入缩略图链接（留空使用资源链接）"
+              placeholder="输入缩略图链接（留空则使用资源链接）"
             />
+            {thumbnail && (
+              <div className="mt-2">
+                <img
+                  src={thumbnail}
+                  alt="缩略图预览"
+                  className="w-full h-32 object-cover rounded border"
+                />
+              </div>
+            )}
+            <p className="text-xs text-muted-foreground">
+              不填写则自动使用资源链接作为缩略图
+            </p>
           </div>
 
           {/* 描述 */}
@@ -457,8 +329,8 @@ export function WorkForm({ work, open, onOpenChange, onSubmit }: WorkFormProps) 
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               取消
             </Button>
-            <Button type="submit" disabled={isUploading}>
-              {isUploading ? '上传中...' : (work ? '保存' : '添加')}
+            <Button type="submit">
+              {work ? '保存' : '添加'}
             </Button>
           </DialogFooter>
         </form>
